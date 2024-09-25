@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml;
 using static TextRPG.Program;
@@ -27,10 +27,10 @@ namespace TextRPG
         {
             Weapon,
             Armor,
-            Ect
+            Potion      
         }
 
-        static List<Item> storeItems = new List<Item>()
+        static Item[] storeItems = new Item[]
             {
                // 아이템 이름      아이템 타입        아이템 스탯   아이템 설명      아이템 가격    아이템 수량
                // string itemName, ItemType itemType, int itemStat, string itemText, int itemPrice, int itemAmount
@@ -41,6 +41,7 @@ namespace TextRPG
                new Item("낡은 검", ItemType.Weapon, 2, "쉽게 볼 수 있는 낡은 검입니다", 600, 1),
                new Item("청동 도끼", ItemType.Weapon, 5, "어디선가 사용됐던 거 같은 도끼입니다", 1500, 1),
                new Item("스파르타의 창", ItemType.Weapon, 7, "스파르타 전사들이 사용했다는 전설의 창입니다", 10000, 1),
+               new Item("생명의 엘릭서", ItemType.Potion, 100, "HP가 100추가되는 전설의 포션입니다", 700, 2)
             };
 
         static List<Item> inventoryItems = new List<Item>(); // 구입한 아이템을 담을 리스트
@@ -77,7 +78,8 @@ namespace TextRPG
                     case ItemType.Armor: // 방어구면 방어력 추가
                         Player.defense += itemStat;
                         break;
-                    case ItemType.Ect:
+                    case ItemType.Potion: // 포션 추가
+                        Player.hp += itemStat;
                         break;
 
                 }
@@ -94,7 +96,7 @@ namespace TextRPG
                     case ItemType.Armor: // 방어구면 방어력 추가
                         Player.defense -= itemStat;
                         break;
-                    case ItemType.Ect:
+                    case ItemType.Potion:
                         break;
 
                 }
@@ -102,11 +104,11 @@ namespace TextRPG
 
         }
 
-        static void AddStoreItem(bool inStore) // 상점에 아이템을 추가함  // 상점 페이지 - 구매 페이지인지 구분하기 위해 bool로 조건
+        static void AddStoreItem(bool inStore) // 상점에 아이템을 추가함  // 씬에 따라 값이 달라지도록 bool로 조건 추가
         {
            
 
-            for (int i = 0; i < storeItems.Count; i++) 
+            for (int i = 0; i < storeItems.Length; i++) 
             {
                 var item = storeItems[i];
                 string itemList = inStore? $"{i + 1}. {item.itemName}" : item.itemName;
@@ -129,10 +131,11 @@ namespace TextRPG
                     case ItemType.Weapon:
                         Console.WriteLine($"{itemList} \t | 공격력 +{item.itemStat} \t | {item.itemText} {priceInfo}");
                         break;
-                    case ItemType.Armor: // 방어구면 방어력 추가
+                    case ItemType.Armor:
                         Console.WriteLine($"{itemList} \t | 방어력 +{item.itemStat} \t | {item.itemText} {priceInfo}");
                         break;
-                    case ItemType.Ect:
+                    case ItemType.Potion:
+                        Console.WriteLine($"{itemList} \t | 체력 +{item.itemStat} \t | {item.itemText} {priceInfo}");
                         break;
 
                 }
@@ -184,10 +187,11 @@ namespace TextRPG
                         case ItemType.Weapon:
                             Console.WriteLine($"{equippedStatus} {item.itemName} \t | 공격력 +{item.itemStat} \t | {item.itemText}");
                             break;
-                        case ItemType.Armor: // 방어구면 방어력 추가
+                        case ItemType.Armor:
                             Console.WriteLine($"{equippedStatus} {item.itemName} \t | 방어력 +{item.itemStat} \t | {item.itemText}");
                             break;
-                        case ItemType.Ect:
+                        case ItemType.Potion:
+                            Console.WriteLine($"{equippedStatus} {item.itemName} \t | 체력 +{item.itemStat} \t | {item.itemText}");
                             break;
 
                     }
@@ -203,7 +207,9 @@ namespace TextRPG
 
         public static void EquippingItem(Item equippedItem) // 아이템 장착을 위한 함수
         {
-            if (equippedItem.isEquipped) // 이미 장착한 아이템
+            bool isViewingEquipment = true;
+
+            while (isViewingEquipment)
             {
                 Console.WriteLine("장착을 해제하겠습니까?");
                 Console.WriteLine();
@@ -213,54 +219,27 @@ namespace TextRPG
                 Console.WriteLine("원하시는 행동을 입력해주세요.");
                 Console.Write(">>");
 
-                while (true)   // 올바르게 입력할 때까지 실행되도록 
+                if (equippedItem.isEquipped) // 이미 장착한 아이템
                 {
-                    String Input = Console.ReadLine();
+                    
 
-                    if (Input == "1")
+                    String input = Console.ReadLine();
+
+                    if (input == "1")
                     {
                         equippedItem.isEquipped = false;
                         equippedItem.RevomeStat(); // 플레이어의 스탯에 무기의 능력치를 제거한다
                         Console.WriteLine("장착을 해제했습니다. 잠시 후 상태창이 업데이트 됩니다");
                         Thread.Sleep(1500);
                         Console.Clear();
-                        EquipItemScene();
+                        isViewingEquipment = false;
                     }
-                    else if (Input == "2")
+                    else if (input == "2")
                     {
                         Console.WriteLine("장착을 유지합니다");
-                        Console.WriteLine();
-                        Console.WriteLine("원하시는 행동을 입력해주세요.");
-                        Console.WriteLine();
-                        Console.WriteLine("1. 장착 해제");
-                        Console.WriteLine("0. 나가기");
-
-                        Console.Write(">>");
-
-                        while (true) // 장착 해제 후 다시 장착을 할 수 있도록 기능 추가
-                        {
-                            String Input2 = Console.ReadLine();  // 콘솔창에 입력
-
-                            if (Input2 == "0")
-                            {
-                                Console.Clear();
-                                EquipItemScene(); // 시작 페이지 불러오기
-                            }
-                            else if(Input2 == "1")
-                            {
-                                equippedItem.isEquipped = false;
-                                equippedItem.RevomeStat(); // 플레이어의 스탯에 무기의 능력치를 제거한다
-                                Console.WriteLine("장착을 해제했습니다. 잠시 후 상태창이 업데이트 됩니다");
-                                Thread.Sleep(1500);
-                                Console.Clear();
-                                EquipItemScene();
-                            }
-                            else
-                            {
-                                Console.WriteLine("잘못된 입력입니다. 다시 입력하세요");
-                                Console.Write(">>");
-                            }
-                        }
+                        Thread.Sleep(1500);
+                        Console.Clear();
+                        isViewingEquipment = false;
 
                     }
                     else
@@ -269,39 +248,41 @@ namespace TextRPG
                         Console.Write(">>");
                     }
                 }
+                else
+                {
+                    equippedItem.isEquipped = true;
+                    equippedItem.AddStat(); // 플레이어의 스탯에 무기의 능력치를 추가한다
+                    Console.WriteLine("장착을 완료했습니다. 잠시 후 상태창이 업데이트 됩니다");
+                    Thread.Sleep(1500);
+                    Console.Clear();
+                    isViewingEquipment = false;
 
+                }
             }
-            else
-            {
-                equippedItem.isEquipped = true;
-                equippedItem.AddStat(); // 플레이어의 스탯에 무기의 능력치를 추가한다
-                Console.WriteLine("장착을 완료했습니다. 잠시 후 상태창이 업데이트 됩니다");
-                Thread.Sleep(1500);
-                Console.Clear();
-                EquipItemScene();
-
-            }
-            
+            // 루프 종료 후 이전 단계 씬으로 돌아감 ➡️ 함수가 끝난 후 다른 함수를 호출하는 것이므로 재귀함수가 아님.
+            InventoryScene();
         }
-
 
         static void StartScene() // 시작 페이지
         {
+            bool isRunning = true; // 루프를 제어할 변수
+
             Console.WriteLine("스파르타 마을에 오신 여러분 환영합니다");
             Console.WriteLine("이곳에서 던전으로 들어가기 전 활동을 할 수 있습니다");
             Console.WriteLine();
             Console.WriteLine("1. 상태 보기");
             Console.WriteLine("2. 인벤토리");
             Console.WriteLine("3. 상점");
+            Console.WriteLine("4. 게임 종료");
             Console.WriteLine();
             Console.WriteLine("원하시는 행동을 입력해주세요.");
             Console.Write(">>");
 
-            while (true)
+            while (isRunning) 
             {
-                String Input = Console.ReadLine();  // 콘솔창에 입력해서 이동하기
+                String input = Console.ReadLine();  // 콘솔창에 입력해서 이동하기
 
-                switch (Input)
+                switch (input)
                 {
                     case "1": // 상태보기
                         Console.Clear();
@@ -315,17 +296,26 @@ namespace TextRPG
                         Console.Clear();
                         StoreScene();
                         break;
+                    case "4": // 종료
+                        isRunning = false;
+                        break;
                     default:
                         Console.WriteLine("잘못된 입력입니다");
                         break;
                 }
+
             }
+
+            Console.WriteLine("게임을 종료합니다");
+
         }
 
 
 
         static void StatusScene() // 상태보기 페이지
         {
+            bool isViewingStatus = true;
+
             Console.WriteLine("상태보기");
             Console.WriteLine("캐릭터의 정보가 표시됩니다");
             Console.WriteLine();
@@ -337,18 +327,19 @@ namespace TextRPG
             Console.WriteLine();
             Console.WriteLine("0. 나가기");
             Console.WriteLine();
-            Console.WriteLine("원하시는 행동을 입력해주세요.");
-            Console.Write(">>");
 
-
-            while (true) // 올바르게 입력할 때까지 실행되도록 
+            while (isViewingStatus)
             {
-                String Input = Console.ReadLine();  // 콘솔창에 입력
+                
+                Console.WriteLine("원하시는 행동을 입력해주세요.");
+                Console.Write(">>");
 
-                if (Input == "0")
+                String input = Console.ReadLine();  // 콘솔창에 입력
+
+                if (input == "0")
                 {
                     Console.Clear();
-                    StartScene(); // 시작 페이지 불러오기
+                    isViewingStatus = false;
                 }
                 else
                 {
@@ -356,10 +347,14 @@ namespace TextRPG
                     Console.Write(">>");
                 }
             }
+            
+            StartScene();
         }
 
         static void InventoryScene() // 인벤토리 페이지
         {
+            bool isViewingInventory = true;
+
             Console.WriteLine("인벤토리");
             Console.WriteLine("보유 중인 아이템을 관리할 수 있습니다");
             Console.WriteLine();
@@ -374,40 +369,43 @@ namespace TextRPG
             Console.WriteLine("원하시는 행동을 입력해주세요.");
             Console.Write(">>");
 
-            
-
-
-            while (true) // 올바르게 입력할 때까지 실행되도록 
+            while (isViewingInventory) 
             {
-                String Input = Console.ReadLine();  // 콘솔창에 입력
 
-                if (Input == "0")
+                String input = Console.ReadLine();  // 콘솔창에 입력
+
+                if (input == "0")
                 {
                     Console.Clear();
-                    StartScene(); // 시작 페이지 불러오기
+                    isViewingInventory = false;
                 }
-                if (Input == "1")
+                else if (input == "1")
                 {
                     Console.Clear();
-                    EquipItemScene(); // 장착 관리 페이지 불러오기
+                    EquipItemScene();
                 }
                 else
                 {
                     Console.WriteLine("잘못된 입력입니다. 다시 입력하세요");
                     Console.Write(">>");
                 }
-            } 
+
+            }
+
+            StartScene();
         }
 
         static void EquipItemScene() // 인벤토리 - 장착 관리
         {
+            bool isViewingEquipItem = true;
+
             Console.WriteLine("인벤토리 - 장착관리");
             Console.WriteLine("보유 중인 아이템을 관리할 수 있습니다");
             Console.WriteLine();
             Console.WriteLine("[아이템 목록]");
 
             AddInventoryItem(true); // 인벤토리에 있는 아이템 리스트 생성
-            
+
             Console.WriteLine();
             Console.WriteLine("장착/해제할 아이템 번호를 입력하세요");
             Console.WriteLine("0. 나가기");
@@ -415,18 +413,17 @@ namespace TextRPG
             Console.WriteLine("원하시는 행동을 입력해주세요.");
             Console.Write(">>");
 
-            
-
-            while (true) // 올바르게 입력할 때까지 실행되도록 
+            while (isViewingEquipItem)
             {
-                String Input = Console.ReadLine();  // 콘솔창에 입력
+             
+                String input = Console.ReadLine();  // 콘솔창에 입력
 
-                if (Input == "0")
+                if (input == "0")
                 {
                     Console.Clear();
-                    InventoryScene(); // 인벤토리 페이지 불러오기
+                    isViewingEquipItem= false;
                 }
-                else if (int.TryParse(Input, out int equippedItem) && equippedItem > 0 && equippedItem <= inventoryItems.Count)
+                else if (int.TryParse(input, out int equippedItem) && equippedItem > 0 && equippedItem <= inventoryItems.Count)
                 {
                     // 입력 받은 equippedItem를 아이템 장착하는 EquippingItem함수로 전달
                     EquippingItem(inventoryItems[equippedItem - 1]); // 구매한 아이템 리스트(inventoryItems)에서 선택한 인덱스의 아이템을 장착.
@@ -438,18 +435,21 @@ namespace TextRPG
                     Console.Write(">>");
                 }
             }
+            
+            InventoryScene();
         }
 
         
 
         static void StoreScene() // 상점 페이지
         {
-            
+            bool isViewingStore = true;
+
             Console.WriteLine("상점");
             Console.WriteLine("필요한 아이템을 얻을 수 있는 상점입니다");
             Console.WriteLine();
             Console.WriteLine("[보유골드]");
-            Console.WriteLine(Player.money +" G"); // 보유한 돈
+            Console.WriteLine(Player.money + " G"); // 보유한 돈
             Console.WriteLine();
             Console.WriteLine("[아이템 목록]");
 
@@ -463,17 +463,17 @@ namespace TextRPG
             Console.WriteLine("원하시는 행동을 입력해주세요.");
             Console.Write(">>");
 
-
-            while (true) // 올바르게 입력할 때까지 실행되도록 
+            while (isViewingStore)
             {
-                String Input = Console.ReadLine();  // 콘솔창에 입력
+               
+                String input = Console.ReadLine();  // 콘솔창에 입력
 
-                if (Input == "0")
+                if (input == "0")
                 {
                     Console.Clear();
-                    StartScene(); // 시작 페이지 불러오기
+                    isViewingStore= false;
                 }
-                if (Input == "1")
+                else if (input == "1")
                 {
                     Console.Clear();
                     PurchaseScene(); // 상품 구매 페이지 불러오기
@@ -485,12 +485,14 @@ namespace TextRPG
                 }
             }
 
-            
+            StartScene();
         }
 
 
         static void PurchaseScene() // 상점 - 물건 구입 페이지
         {
+            bool isViewingPurchase = true;
+
             Console.WriteLine("상점");
             Console.WriteLine("필요한 아이템을 얻을 수 있는 상점입니다");
             Console.WriteLine();
@@ -500,7 +502,7 @@ namespace TextRPG
             Console.WriteLine("[아이템 목록]");
 
             AddStoreItem(true); // 아이템 리스트 표시 (인덱스 있음)
-            
+
             Console.WriteLine();
             Console.WriteLine("구매할 아이템 번호를 입력하세요");
             Console.WriteLine("0. 나가기");
@@ -508,24 +510,20 @@ namespace TextRPG
             Console.WriteLine("원하시는 행동을 입력해주세요.");
             Console.Write(">>");
 
-
-
-
-            while (true) // 올바르게 입력할 때까지 실행되도록 
+            while (isViewingPurchase)
             {
-                String Input = Console.ReadLine();  // 콘솔창에 입력
+                
+                String input = Console.ReadLine();  // 콘솔창에 입력
 
-                if (Input == "0")
+                if (input == "0")
                 {
                     Console.Clear();
-                    StoreScene(); // 인벤토리 페이지 불러오기
-                    break;
+                    isViewingPurchase= false; // StoreScene으로 돌아감
                 }
-                else if (int.TryParse(Input, out int selectedIndex) && selectedIndex > 0 && selectedIndex <= storeItems.Count)
+                else if (int.TryParse(input, out int selectedIndex) && selectedIndex > 0 && selectedIndex <= storeItems.Length)
                 {
                     // 입력 받은 selectedIndex를 Buy 함수로 전달
                     Buy(storeItems[selectedIndex - 1]); // storeItems 리스트에서 선택한 인덱스의 아이템을 구매
-                   
                 }
                 else
                 {
@@ -533,6 +531,8 @@ namespace TextRPG
                     Console.Write(">>");
                 }
             }
+
+            StoreScene();
         }
 
 
@@ -542,6 +542,7 @@ namespace TextRPG
         }
     }
 }
+
 
 
 // 작업하다가 궁금했던 점
